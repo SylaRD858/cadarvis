@@ -7,6 +7,8 @@ const { serveStatic } = require('./http/static');
 const MODULES = [
   './auth/routes',
   './users/routes',
+  './config/routes',
+  './plans/routes',
 ];
 
 function createApp(db, { publicDir = path.join(__dirname, '..', 'public') } = {}) {

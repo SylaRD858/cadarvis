@@ -24,6 +24,17 @@ function activeSuperadmins(db) {
     WHERE r.name = ? AND u.active = 1`).get(SUPERADMIN_ROLE).n;
 }
 
+function rolePerms(db, role) {
+  return role.name === SUPERADMIN_ROLE ? ALL_PERMS
+    : db.prepare('SELECT perm FROM role_permissions WHERE role_id = ?').all(role.id).map(x => x.perm);
+}
+
+// Nadie (salvo superadmin) puede dar o manejar más permisos de los que tiene.
+function assertWithin(user, perms, msg = 'No puede asignar permisos que usted no tiene') {
+  if (user.role_name === SUPERADMIN_ROLE) return;
+  if (perms.some(p => !user.perms.has(p))) throw new HttpError(403, msg);
+}
+
 function checkPassword(p) {
   if (typeof p !== 'string' || p.length < 8) throw new HttpError(400, 'La contraseña debe tener al menos 8 caracteres');
 }
@@ -56,6 +67,7 @@ function register(router) {
     checkPassword(body.password);
     const role = getRole(db, body.role_id);
     if (role.name === SUPERADMIN_ROLE && user.role_name !== SUPERADMIN_ROLE) throw new HttpError(403, 'Solo un superadmin puede asignar ese rango');
+    assertWithin(user, rolePerms(db, role), 'No puede asignar un rango con más permisos que el suyo');
     if (db.prepare('SELECT 1 FROM users WHERE username = ?').get(username)) throw new HttpError(409, 'Ese usuario ya existe');
     const r = db.prepare('INSERT INTO users(username, full_name, password_hash, role_id, created_at) VALUES (?,?,?,?,?)')
       .run(username, full_name, hashPassword(body.password), role.id, new Date().toISOString());
@@ -75,6 +87,8 @@ function register(router) {
     const newRole = getRole(db, next.role_id);
     const touchesSuper = before.role_name === SUPERADMIN_ROLE || newRole.name === SUPERADMIN_ROLE;
     if (touchesSuper && user.role_name !== SUPERADMIN_ROLE) throw new HttpError(403, 'Solo un superadmin puede modificar superadmins');
+    assertWithin(user, rolePerms(db, getRole(db, before.role_id)), 'No puede modificar a un usuario con más permisos que usted');
+    assertWithin(user, rolePerms(db, newRole), 'No puede asignar un rango con más permisos que el suyo');
     const losesSuper = before.role_name === SUPERADMIN_ROLE && before.active &&
       (newRole.name !== SUPERADMIN_ROLE || !next.active);
     if (losesSuper && activeSuperadmins(db) <= 1) throw new HttpError(409, 'Debe quedar al menos un superadmin activo');
@@ -101,6 +115,7 @@ function register(router) {
     const name = String(body.name || '').trim();
     if (!name) throw new HttpError(400, 'Falta el nombre');
     const perms = checkPerms(body.perms || []);
+    assertWithin(user, perms);
     if (db.prepare('SELECT 1 FROM roles WHERE name = ?').get(name)) throw new HttpError(409, 'Ese rango ya existe');
     const id = db.prepare('INSERT INTO roles(name) VALUES (?)').run(name).lastInsertRowid;
     const ins = db.prepare('INSERT INTO role_permissions(role_id, perm) VALUES (?,?)');
@@ -121,6 +136,8 @@ function register(router) {
     db.prepare('UPDATE roles SET name = ? WHERE id = ?').run(name, role.id);
     if (body.perms !== undefined) {
       const perms = checkPerms(body.perms);
+      assertWithin(user, perms);
+      assertWithin(user, before.perms, 'No puede modificar un rango con más permisos que el suyo');
       db.prepare('DELETE FROM role_permissions WHERE role_id = ?').run(role.id);
       const ins = db.prepare('INSERT INTO role_permissions(role_id, perm) VALUES (?,?)');
       perms.forEach(p => ins.run(role.id, p));

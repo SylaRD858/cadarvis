@@ -54,16 +54,20 @@ class Router {
 
   // Devuelve true si la ruta fue atendida.
   async handle(req, res) {
-    const url = new URL(req.url, 'http://x');
+    let url;
+    try { url = new URL(req.url, 'http://x'); } catch { sendJson(res, 400, { error: 'Dirección inválida' }); return true; }
     for (const r of this.routes) {
       if (r.method !== req.method) continue;
       const m = r.re.exec(url.pathname);
       if (!m) continue;
-      req.params = {};
-      r.keys.forEach((k, i) => { req.params[k] = decodeURIComponent(m[i + 1]); });
-      req.query = Object.fromEntries(url.searchParams);
       const ctx = { ...this.ctxBase };
       try {
+        req.params = {};
+        r.keys.forEach((k, i) => {
+          try { req.params[k] = decodeURIComponent(m[i + 1]); }
+          catch { throw new HttpError(400, 'Dirección inválida'); }
+        });
+        req.query = Object.fromEntries(url.searchParams);
         ctx.body = (req.method === 'POST' || req.method === 'PUT') ? await readJson(req) : {};
         for (const h of r.handlers) {
           const out = await h(req, res, ctx);

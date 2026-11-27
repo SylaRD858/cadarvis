@@ -4,7 +4,9 @@ const { Router, sendJson } = require('./http/router');
 const { serveStatic } = require('./http/static');
 
 // Módulos de rutas: cada uno exporta register(router)
-const MODULES = [];
+const MODULES = [
+  './auth/routes',
+];
 
 function createApp(db, { publicDir = path.join(__dirname, '..', 'public') } = {}) {
   const router = new Router({ db });

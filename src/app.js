@@ -9,6 +9,7 @@ const MODULES = [
   './users/routes',
   './config/routes',
   './plans/routes',
+  './clients/routes',
 ];
 
 function createApp(db, { publicDir = path.join(__dirname, '..', 'public') } = {}) {

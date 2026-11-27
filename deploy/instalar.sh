@@ -23,7 +23,13 @@ apt-get install -y caddy
 # 2) Usuario y codigo
 id cadarvis >/dev/null 2>&1 || useradd -r -m -d $DATA -s /usr/sbin/nologin cadarvis
 mkdir -p $DATA/respaldos
-if [ ! -d $DIR/.git ]; then git clone --depth 1 "$REPO" $DIR; fi
+# Reintenta hasta 60 minutos (por si el repo aun no es publico)
+for i in $(seq 1 120); do
+  [ -d $DIR/.git ] && break
+  GIT_TERMINAL_PROMPT=0 git clone --depth 1 "$REPO" $DIR && break
+  rm -rf $DIR; sleep 30
+done
+[ -d $DIR/.git ] || { echo "No se pudo descargar el codigo"; exit 1; }
 bash $DIR/scripts/descargar-vendor.sh || true
 chown -R cadarvis:cadarvis $DIR $DATA
 

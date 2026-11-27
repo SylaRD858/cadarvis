@@ -6,6 +6,7 @@ const { serveStatic } = require('./http/static');
 // Módulos de rutas: cada uno exporta register(router)
 const MODULES = [
   './auth/routes',
+  './users/routes',
 ];
 
 function createApp(db, { publicDir = path.join(__dirname, '..', 'public') } = {}) {

@@ -1,0 +1,12 @@
+{
+  "name": "cadarvis",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema del Acueducto Rural de Villa Sombrero (CADARVIS)",
+  "type": "commonjs",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  }
+}

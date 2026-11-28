@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { esc, fmtFecha } from '../ui.js';
 import { setTitulo } from '../app.js';
 
-const ENTIDADES = { usuario: 'Usuario', rango: 'Rango', config: 'Configuración', plan: 'Plan', cliente: 'Cliente', punto: 'Punto del mapa', tipo_punto: 'Tipo de punto', sesion: 'Sesión' };
+const ENTIDADES = { usuario: 'Usuario', rango: 'Rango', config: 'Configuración', plan: 'Plan', cliente: 'Cliente', punto: 'Punto del mapa', tipo_punto: 'Tipo de punto', sesion: 'Sesión', inicio_rango: 'Panel de inicio' };
 
 export async function render(el) {
   setTitulo('Bitácora', 'Últimas acciones realizadas en el sistema');

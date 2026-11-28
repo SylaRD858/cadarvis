@@ -7,8 +7,8 @@ const DEFAULTS = {
   facturacion: { dia_generacion: 1, mora: { activa: false, tipo: 'fijo', valor_cents: 0, porcentaje: 0, dias: 30 } },
   recibo: { ancho_mm: 80, pie: '' },
   ncf: { activo: false },
-  // Centro aproximado de Villa Sombrero; ajustable desde Configuración.
-  mapa: { centro: { lat: 18.2400, lng: -70.2700 }, zoom: 15 },
+  // Villa Sombrero, Baní (OpenStreetMap); ajustable desde Configuración.
+  mapa: { centro: { lat: 18.257425, lng: -70.361671 }, zoom: 15 },
 };
 
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);

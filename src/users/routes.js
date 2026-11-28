@@ -50,7 +50,9 @@ function roleWithPerms(db, role) {
   const perms = role.name === SUPERADMIN_ROLE ? ALL_PERMS
     : db.prepare('SELECT perm FROM role_permissions WHERE role_id = ? ORDER BY perm').all(role.id).map(x => x.perm);
   const users = db.prepare('SELECT COUNT(*) n FROM users WHERE role_id = ?').get(role.id).n;
-  return { id: role.id, name: role.name, is_system: !!role.is_system, perms, users };
+  const row = db.prepare('SELECT widgets FROM role_dashboard WHERE role_id = ?').get(role.id);
+  const inicio = row ? JSON.parse(row.widgets) : [];
+  return { id: role.id, name: role.name, is_system: !!role.is_system, perms, users, inicio };
 }
 
 function register(router) {
@@ -120,6 +122,9 @@ function register(router) {
     const id = db.prepare('INSERT INTO roles(name) VALUES (?)').run(name).lastInsertRowid;
     const ins = db.prepare('INSERT INTO role_permissions(role_id, perm) VALUES (?,?)');
     perms.forEach(p => ins.run(id, p));
+    const { WIDGETS } = require('../dashboard/widgets');
+    db.prepare('INSERT INTO role_dashboard(role_id, widgets) VALUES (?, ?)')
+      .run(id, JSON.stringify(WIDGETS.filter(w => perms.includes(w.perm)).map(w => w.key)));
     const out = roleWithPerms(db, getRole(db, id));
     audit(db, { userId: user.id, action: 'crear', entity: 'rango', entityId: id, after: out });
     return out;

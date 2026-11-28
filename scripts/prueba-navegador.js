@@ -32,7 +32,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await shot('01-login');
   await js(`(() => { const f = document.querySelector('form'); f.username.value=${JSON.stringify(user)}; f.password.value=${JSON.stringify(pass)}; f.requestSubmit(); })()`);
   await sleep(1500);
-  for (const [h, n] of [['#/clientes', '02-clientes'], ['#/clientes/nuevo', '03-cliente-nuevo'], ['#/planes', '04-planes'],
+  for (const [h, n] of [['#/inicio', '00-inicio'], ['#/clientes', '02-clientes'], ['#/clientes/nuevo', '03-cliente-nuevo'], ['#/planes', '04-planes'],
     ['#/usuarios', '05-usuarios'], ['#/rangos', '06-rangos'], ['#/mapa', '07-mapa'], ['#/config', '08-config'], ['#/bitacora', '09-bitacora']]) {
     await js(`location.hash='${h}'`); await sleep(1300); await shot(n);
     const txt = await js(`document.getElementById('vista')?.innerText.slice(0,120)`);

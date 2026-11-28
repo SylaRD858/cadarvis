@@ -33,7 +33,7 @@ export function markerIcon(type) {
 export const TIPO_CLIENTE = { key: '_cliente', name: 'Clientes', icon: '🏠', color: '#1565C0' };
 
 export function centroDe(ctx) {
-  return ctx.config?.mapa?.centro || { lat: 18.24, lng: -70.27 };
+  return ctx.config?.mapa?.centro || { lat: 18.257425, lng: -70.361671 };
 }
 
 // Pide la ubicación GPS del equipo

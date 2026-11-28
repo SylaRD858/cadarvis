@@ -3,6 +3,7 @@ import { esc, toast } from './ui.js';
 
 // Menú: [hash, texto, ícono, permiso requerido, módulo]
 const MENU = [
+  ['#/inicio', 'Inicio', '🏠', null, './pages/inicio.js'],
   ['#/clientes', 'Clientes', '👥', 'clientes.ver', './pages/clientes.js'],
   ['#/mapa', 'Mapa', '🗺️', 'mapa.ver', './pages/mapa.js'],
   ['#/planes', 'Planes', '💧', 'planes.ver', './pages/planes.js'],
@@ -21,7 +22,7 @@ const ROUTES = [
 export const ctx = {
   user: null,
   config: null,
-  can(perm) { return !!this.user && this.user.perms.includes(perm); },
+  can(perm) { return !!this.user && (perm === null || this.user.perms.includes(perm)); },
   async refreshConfig() { this.config = await api('GET', '/api/config'); pintarMarca(); },
 };
 

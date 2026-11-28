@@ -162,6 +162,13 @@ function register(router) {
   });
 
   // ---- Bitácora ----
+  router.get('/api/bitacora/:id', requirePerm('bitacora.ver'), (req, res, { db }) => {
+    const r = db.prepare('SELECT a.*, u.username, u.full_name FROM audit_log a LEFT JOIN users u ON u.id = a.user_id WHERE a.id = ?').get(Number(req.params.id));
+    if (!r) throw new HttpError(404, 'Registro no encontrado');
+    const parse = v => { try { return v ? JSON.parse(v) : null; } catch { return v; } };
+    return { ...r, before: parse(r.before), after: parse(r.after) };
+  });
+
   router.get('/api/bitacora', requirePerm('bitacora.ver'), (req, res, { db }) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
     const offset = Math.max(Number(req.query.offset) || 0, 0);

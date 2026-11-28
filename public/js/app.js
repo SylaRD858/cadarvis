@@ -4,6 +4,7 @@ import { esc, toast } from './ui.js';
 // Menú: [hash, texto, ícono, permiso requerido, módulo]
 const MENU = [
   ['#/inicio', 'Inicio', '🏠', null, './pages/inicio.js'],
+  ['#/averias', 'Averías', '🛠️', 'averias.ver', './pages/averias.js'],
   ['#/clientes', 'Clientes', '👥', 'clientes.ver', './pages/clientes.js'],
   ['#/mapa', 'Mapa', '🗺️', 'mapa.ver', './pages/mapa.js'],
   ['#/planes', 'Planes', '💧', 'planes.ver', './pages/planes.js'],
@@ -15,6 +16,8 @@ const MENU = [
 
 // Rutas con parámetros
 const ROUTES = [
+  [/^#\/averias\/nueva(\?.*)?$/, './pages/averia.js', 'averias.crear', () => ({ id: null })],
+  [/^#\/averias\/(\d+)$/, './pages/averia.js', 'averias.ver', m => ({ id: Number(m[1]) })],
   [/^#\/clientes\/nuevo$/, './pages/cliente-form.js', 'clientes.editar', () => ({ id: null })],
   [/^#\/clientes\/(\d+)$/, './pages/cliente-form.js', 'clientes.ver', m => ({ id: Number(m[1]) })],
 ];
@@ -95,10 +98,11 @@ async function route() {
   }
   if (!document.getElementById('vista')) layout();
 
-  let mod, params = {}, perm;
+  const query = Object.fromEntries(new URLSearchParams(hash.split('?')[1] || ''));
+  let mod, params = { ...query }, perm;
   for (const [re, m, p, fn] of ROUTES) {
     const r = re.exec(hash);
-    if (r) { mod = m; perm = p; params = fn(r); break; }
+    if (r) { mod = m; perm = p; params = { ...query, ...fn(r) }; break; }
   }
   if (!mod) {
     const item = MENU.find(m => m[0] === hash.split('?')[0]);
@@ -111,7 +115,7 @@ async function route() {
     return;
   }
 
-  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('activo', hash.startsWith(a.dataset.nav)));
+  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('activo', hash.split('?')[0] === a.dataset.nav || hash.startsWith(a.dataset.nav + '/')));
   const vista = document.getElementById('vista');
   vista.innerHTML = '<div class="vacio">Cargando…</div>';
   try {

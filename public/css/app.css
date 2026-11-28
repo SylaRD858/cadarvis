@@ -145,3 +145,35 @@ ul.lista li:last-child { border-bottom: 0; }
 .orden-widgets li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--borde); }
 .orden-widgets li label { flex: 1; display: flex; gap: 8px; align-items: center; }
 .orden-widgets li.no-permitido { opacity: .45; }
+
+/* Averías */
+.chip.prio-urgente { background: #FFEBEE; color: #B71C1C; }
+.chip.prio-alta { background: #FFF3E0; color: #E65100; }
+.chip.prio-media { background: #E3F2FD; color: #1565C0; }
+.chip.prio-baja { background: #ECEFF1; color: #546E7A; }
+.chip.av-nueva { background: #FFEBEE; color: #C62828; }
+.chip.av-asignada { background: #FFF8E1; color: #A66B00; }
+.chip.av-en_proceso { background: #E3F2FD; color: #1565C0; }
+.chip.av-resuelta { background: #E8F5E9; color: #2E7D32; }
+.chip.av-cerrada { background: #ECEFF1; color: #546E7A; }
+.sugerencias { display: flex; flex-direction: column; }
+.sugerencias button { text-align: left; background: #fff; border: 1px solid var(--borde); border-top: 0; padding: 8px 10px; font: inherit; cursor: pointer; }
+.sugerencias button:first-child { border-top: 1px solid var(--borde); border-radius: 8px 8px 0 0; }
+.sugerencias button:hover { background: #F0F7FF; }
+table.ficha th { width: 110px; text-transform: none; letter-spacing: 0; font-size: .85rem; border-bottom: 1px solid var(--borde); }
+ul.linea li { border-left: 3px solid var(--celeste); padding-left: 10px; margin-bottom: 6px; border-bottom: 0; }
+
+/* Panel clickeable */
+a.kpi, button.kpi { text-decoration: none; color: inherit; cursor: pointer; border: 0; font: inherit; text-align: left; transition: background .15s, transform .15s; }
+a.kpi:hover, button.kpi:hover { background: #E3F0FC; transform: translateY(-1px); }
+a.barra { color: inherit; text-decoration: none; border-radius: 6px; padding: 2px 4px; margin: 2px -4px; }
+a.barra:hover { background: #F0F7FF; }
+.chips-red a { color: inherit; text-decoration: none; }
+.chips-red a span:hover, .chips-red a:hover span { background: #E3F0FC; }
+ul.lista li.clic { cursor: pointer; border-radius: 6px; padding-left: 6px; padding-right: 6px; }
+ul.lista li.clic:hover { background: #F0F7FF; }
+.widget h2 a { color: inherit; }
+.widget h2 a:hover { color: var(--azul); }
+.filtros-activos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.filtros-activos a { background: #E3F0FC; color: var(--azul-osc); border-radius: 99px; padding: 3px 10px; font-size: .85rem; }
+pre.json { background: #F5F9FD; border-radius: 8px; padding: 10px; font-size: .8rem; overflow: auto; max-height: 300px; white-space: pre-wrap; }

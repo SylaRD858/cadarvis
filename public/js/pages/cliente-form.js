@@ -11,7 +11,8 @@ export async function render(el, { id }, ctx) {
     api('GET', '/api/planes').catch(() => []),
   ]);
   setTitulo(nuevo ? 'Nuevo cliente' : c.full_name, nuevo ? 'Registro de abonado' : `${c.code} · registrado ${fmtFecha(c.created_at)}`);
-  setAcciones('<a class="btn sec" href="#/clientes">‹ Volver</a>');
+  const accFicha = () => setAcciones(`${!nuevo && ctx.can('averias.crear') ? `<a class="btn ocre" href="#/averias/nueva?cliente=${id}">🛠️ Reportar avería</a>` : ''}<a class="btn sec" href="#/clientes">‹ Volver</a>`);
+  accFicha();
 
   const dis = puedeEditar ? '' : 'disabled';
   const planOpts = planes.filter(p => p.active || p.id === c.plan_id)
@@ -46,7 +47,8 @@ export async function render(el, { id }, ctx) {
         <span class="ayuda" id="coords"></span>
       </div>
     </div>
-  </form>`;
+  </form>
+  <div id="averiasCliente"></div>`;
 
   const form = el.querySelector('form');
   let pos = c.lat != null ? { lat: c.lat, lng: c.lng } : null;
@@ -94,9 +96,20 @@ export async function render(el, { id }, ctx) {
       const r = nuevo ? await api('POST', '/api/clientes', body) : await api('PUT', `/api/clientes/${id}`, body);
       toast(nuevo ? `Cliente ${r.code} registrado` : 'Cambios guardados', 'ok');
       if (nuevo) location.hash = `#/clientes/${r.id}`;
-      else setTitulo(r.full_name, `${r.code} · registrado ${fmtFecha(r.created_at)}`), setAcciones('<a class="btn sec" href="#/clientes">‹ Volver</a>');
+      else setTitulo(r.full_name, `${r.code} · registrado ${fmtFecha(r.created_at)}`), accFicha();
     } catch (err) {
       el.querySelector('#err').textContent = err.message;
     } finally { btn.disabled = false; }
   };
+
+  // Averías de este cliente
+  if (!nuevo && ctx.can('averias.ver')) {
+    const { items } = await api('GET', `/api/averias?cliente=${id}&limit=10`);
+    const { TIPOS, chipEstadoAveria, chipPrioridad } = await import('../averias-common.js');
+    el.querySelector('#averiasCliente').innerHTML = `<div class="carta"><h2>Averías de este cliente</h2>
+      ${items.length ? `<table class="tabla"><tbody>${items.map(a => `<tr class="clic" data-av="${a.id}"><td><b>${esc(a.code)}</b></td><td>${esc(TIPOS[a.type])}</td>
+        <td>${chipPrioridad(a.priority)}</td><td>${chipEstadoAveria(a.status)}</td><td class="ayuda">${fmtFecha(a.created_at)}</td></tr>`).join('')}</tbody></table>`
+        : '<p class="ayuda">Sin averías reportadas.</p>'}</div>`;
+    el.querySelector('#averiasCliente').addEventListener('click', e => { const tr = e.target.closest('tr[data-av]'); if (tr) location.hash = `#/averias/${tr.dataset.av}`; });
+  }
 }

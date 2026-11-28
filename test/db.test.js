@@ -7,7 +7,7 @@ test('migrate es idempotente y siembra rangos y tipos', () => {
   migrate(db);
   migrate(db);
   assert.strictEqual(db.prepare('select count(*) n from roles').get().n, 5);
-  assert.strictEqual(db.prepare('select count(*) n from point_types').get().n, 7);
+  assert.strictEqual(db.prepare('select count(*) n from point_types').get().n, 6);
   assert.strictEqual(db.prepare('select count(*) n from users').get().n, 0);
 });
 

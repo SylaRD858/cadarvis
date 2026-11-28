@@ -9,19 +9,36 @@ function inicioMesIso() {
 
 const WIDGETS = [
   {
+    key: 'averias_resumen', title: 'Averías', perm: 'averias.ver',
+    data(db) {
+      const por_estado = { nueva: 0, asignada: 0, en_proceso: 0, resuelta: 0, cerrada: 0 };
+      for (const r of db.prepare('SELECT status, COUNT(*) n FROM averias GROUP BY status').all()) por_estado[r.status] = r.n;
+      const abiertas = por_estado.nueva + por_estado.asignada + por_estado.en_proceso;
+      const urgentes = db.prepare("SELECT COUNT(*) n FROM averias WHERE priority IN ('urgente','alta') AND status IN ('nueva','asignada','en_proceso')").get().n;
+      const hace30 = new Date(Date.now() - 30 * 86400000).toISOString();
+      const res = db.prepare(`SELECT COUNT(*) n, AVG((julianday(resolved_at) - julianday(created_at)) * 24) h
+        FROM averias WHERE resolved_at IS NOT NULL AND resolved_at >= ?`).get(hace30);
+      const recientes = db.prepare(`SELECT a.id, a.code, a.type, a.priority, a.status, a.created_at, c.full_name AS client_name, u.full_name AS assigned_name
+        FROM averias a LEFT JOIN clients c ON c.id = a.client_id LEFT JOIN users u ON u.id = a.assigned_to
+        WHERE a.status IN ('nueva','asignada','en_proceso')
+        ORDER BY CASE a.priority WHEN 'urgente' THEN 0 WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END, a.id DESC LIMIT 6`).all();
+      return { abiertas, por_estado, urgentes, resueltas_30d: res.n, horas_promedio: res.h === null ? null : Math.round(res.h * 10) / 10, recientes };
+    },
+  },
+  {
     key: 'clientes_resumen', title: 'Clientes', perm: 'clientes.ver',
     data(db) {
       const por_estado = { activo: 0, suspendido: 0, cortado: 0, retirado: 0 };
       for (const r of db.prepare('SELECT status, COUNT(*) n FROM clients GROUP BY status').all()) por_estado[r.status] = r.n;
       const total = Object.values(por_estado).reduce((a, b) => a + b, 0);
       const nuevos_mes = db.prepare('SELECT COUNT(*) n FROM clients WHERE created_at >= ?').get(inicioMesIso()).n;
-      return { total, por_estado, nuevos_mes };
+      return { total, por_estado, nuevos_mes, desde_mes: inicioMesIso() };
     },
   },
   {
     key: 'ingreso_esperado', title: 'Facturación mensual esperada', perm: 'planes.ver',
     data(db) {
-      const por_plan = db.prepare(`SELECT p.name, p.price_cents, COUNT(c.id) AS clientes, COUNT(c.id) * p.price_cents AS total_cents
+      const por_plan = db.prepare(`SELECT p.id, p.name, p.price_cents, COUNT(c.id) AS clientes, COUNT(c.id) * p.price_cents AS total_cents
         FROM plans p LEFT JOIN clients c ON c.plan_id = p.id AND c.status = 'activo'
         GROUP BY p.id ORDER BY total_cents DESC`).all();
       const mensual_cents = por_plan.reduce((a, p) => a + p.total_cents, 0);
@@ -64,12 +81,12 @@ const WIDGETS = [
   {
     key: 'actividad_reciente', title: 'Actividad reciente', perm: 'bitacora.ver',
     data(db) {
-      return db.prepare(`SELECT a.at, a.action, a.entity, a.entity_id, a.after, a.before, u.full_name
+      return db.prepare(`SELECT a.id, a.at, a.action, a.entity, a.entity_id, a.after, a.before, u.full_name
         FROM audit_log a LEFT JOIN users u ON u.id = a.user_id WHERE a.action != 'login'
         ORDER BY a.id DESC LIMIT 8`).all().map(r => {
           let ref = '';
           try { const o = JSON.parse(r.after || r.before || 'null'); ref = o ? (o.code || o.name || o.full_name || o.username || '') : ''; } catch {}
-          return { at: r.at, action: r.action, entity: r.entity, ref, user: r.full_name };
+          return { id: r.id, at: r.at, action: r.action, entity: r.entity, entity_id: r.entity_id, ref, user: r.full_name };
         });
     },
   },

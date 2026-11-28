@@ -1,8 +1,9 @@
 import { api } from '../api.js';
 import { esc, fmtFecha } from '../ui.js';
 import { setTitulo } from '../app.js';
+import { detalleBitacora } from './inicio.js';
 
-const ENTIDADES = { usuario: 'Usuario', rango: 'Rango', config: 'Configuración', plan: 'Plan', cliente: 'Cliente', punto: 'Punto del mapa', tipo_punto: 'Tipo de punto', sesion: 'Sesión', inicio_rango: 'Panel de inicio' };
+const ENTIDADES = { usuario: 'Usuario', rango: 'Rango', config: 'Configuración', plan: 'Plan', cliente: 'Cliente', punto: 'Punto del mapa', tipo_punto: 'Tipo de punto', sesion: 'Sesión', inicio_rango: 'Panel de inicio', averia: 'Avería' };
 
 export async function render(el) {
   setTitulo('Bitácora', 'Últimas acciones realizadas en el sistema');
@@ -12,7 +13,8 @@ export async function render(el) {
     <tbody>${rows.map(r => {
       let det = '';
       try { const a = JSON.parse(r.after || r.before || 'null'); det = a ? (a.code || a.name || a.full_name || a.username || '') : ''; } catch {}
-      return `<tr><td class="ayuda">${fmtFecha(r.at)}</td><td>${esc(r.username || '—')}</td><td>${esc(r.action)}</td>
+      return `<tr class="clic" data-id="${r.id}"><td class="ayuda">${fmtFecha(r.at)}</td><td>${esc(r.username || '—')}</td><td>${esc(r.action)}</td>
         <td>${esc(ENTIDADES[r.entity] || r.entity)} ${r.entity_id ? `#${esc(r.entity_id)}` : ''}</td><td>${esc(det)}</td></tr>`;
     }).join('') || '<tr><td colspan="5" class="vacio">Sin registros</td></tr>'}</tbody></table></div>`;
+  el.querySelector('tbody').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) detalleBitacora(tr.dataset.id); });
 }

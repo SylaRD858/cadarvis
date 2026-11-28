@@ -64,6 +64,13 @@ function register(router) {
     }
     if (req.query.estado) { where.push('c.status = ?'); args.push(req.query.estado); }
     if (req.query.plan_id) { where.push('c.plan_id = ?'); args.push(Number(req.query.plan_id)); }
+    if (req.query.sin_plan === '1') where.push('c.plan_id IS NULL');
+    if (req.query.sin_ubicacion === '1') where.push('c.lat IS NULL');
+    if (req.query.desde) { where.push('c.created_at >= ?'); args.push(req.query.desde); }
+    if (req.query.sector !== undefined && req.query.sector !== '') {
+      if (req.query.sector === 'Sin sector') where.push("(c.sector IS NULL OR TRIM(c.sector) = '')");
+      else { where.push('c.sector = ?'); args.push(req.query.sector); }
+    }
     const w = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
     const offset = Math.max(Number(req.query.offset) || 0, 0);

@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { esc, modal, toast, confirmar, datosForm } from '../ui.js';
 import { setTitulo, setAcciones } from '../app.js';
 import { leafletDisponible, createMap, markerIcon, centroDe, miUbicacion, TIPO_CLIENTE, AVISO_SIN_LEAFLET } from '../map-common.js';
+import { ICONO_AVERIA, TIPOS as TIPOS_AVERIA, ESTADOS as ESTADOS_AVERIA } from '../averias-common.js';
 
 // Campos extra sugeridos por tipo (se guardan en "data")
 const CAMPOS = {
@@ -20,7 +21,8 @@ export async function render(el, params, ctx) {
   if (!await leafletDisponible()) { el.innerHTML = AVISO_SIN_LEAFLET; return; }
 
   const tipos = await api('GET', '/api/mapa/tipos');
-  const todos = [TIPO_CLIENTE, ...tipos];
+  const verAverias = ctx.can('averias.ver');
+  const todos = [...(verAverias ? [ICONO_AVERIA] : []), TIPO_CLIENTE, ...tipos];
   const ocultos = new Set();
 
   el.innerHTML = `<div class="mapa-wrap">
@@ -38,7 +40,15 @@ export async function render(el, params, ctx) {
 
   async function cargar() {
     Object.values(capas).forEach(g => g.clearLayers());
-    const [puntos, clientes] = await Promise.all([api('GET', '/api/mapa/puntos'), api('GET', '/api/clientes/geo')]);
+    const [puntos, clientes, averias] = await Promise.all([api('GET', '/api/mapa/puntos'), api('GET', '/api/clientes/geo'),
+      verAverias ? api('GET', '/api/averias?abiertas=1&limit=500').then(r => r.items) : Promise.resolve([])]);
+    for (const a of averias) {
+      if (a.lat == null) continue;
+      L.marker([a.lat, a.lng], { icon: markerIcon(ICONO_AVERIA), zIndexOffset: 1000 })
+        .bindPopup(`<b>${esc(a.code)}</b> · ${esc(TIPOS_AVERIA[a.type])}<br>${esc(ESTADOS_AVERIA[a.status])} · ${esc(a.priority)}
+          ${a.client_name ? `<br>${esc(a.client_name)}` : ''}<br><a href="#/averias/${a.id}">Abrir avería</a>`)
+        .addTo(capas[ICONO_AVERIA.key]);
+    }
     for (const c of clientes) {
       L.marker([c.lat, c.lng], { icon: markerIcon(TIPO_CLIENTE) })
         .bindPopup(`<b>${esc(c.full_name)}</b><br>${esc(c.code)} · ${esc(c.status)}<br><a href="#/clientes/${c.id}">Ver ficha</a>`)
@@ -127,4 +137,16 @@ export async function render(el, params, ctx) {
   }
 
   await cargar();
+
+  // Llegando desde el panel con ?tipo=: mostrar solo esa capa y acercarse a sus puntos
+  if (params.tipo && capas[params.tipo]) {
+    el.querySelectorAll('#capas input[data-k]').forEach(i => {
+      const on = i.dataset.k === params.tipo;
+      i.checked = on;
+      on ? capas[i.dataset.k].addTo(map) : capas[i.dataset.k].remove();
+    });
+    const marcadores = capas[params.tipo].getLayers();
+    if (marcadores.length) map.fitBounds(L.featureGroup(marcadores).getBounds().pad(0.3), { maxZoom: 18 });
+    else toast('No hay puntos de ese tipo en el mapa todavía');
+  }
 }

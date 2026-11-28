@@ -15,13 +15,14 @@ export async function render(el, params, ctx) {
       <input class="crece" id="q" placeholder="Buscar por nombre, código, cédula o teléfono…" style="min-width:220px">
       <select id="estado" style="width:auto">
         <option value="">Todos los estados</option>
-        <option>activo</option><option>suspendido</option><option>cortado</option><option>retirado</option>
+        ${['activo', 'suspendido', 'cortado', 'retirado'].map(e => `<option ${params.estado === e ? 'selected' : ''}>${e}</option>`).join('')}
       </select>
       <select id="plan" style="width:auto">
         <option value="">Todos los planes</option>
-        ${planes.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+        ${planes.map(p => `<option value="${p.id}" ${String(p.id) === params.plan_id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
       </select>
     </div>
+    <div class="filtros-activos" id="extras"></div>
   </div>
   <div class="carta">
     <div class="tabla-scroll"><table class="tabla">
@@ -36,9 +37,18 @@ export async function render(el, params, ctx) {
 
   const $ = s => el.querySelector(s);
   let offset = 0;
+  // Filtros extra que llegan desde el panel de inicio
+  const extras = {};
+  const NOMBRES = { sector: v => `Sector: ${v}`, sin_ubicacion: () => 'Sin ubicación en el mapa', sin_plan: () => 'Sin plan', desde: () => 'Nuevos este mes' };
+  for (const k of Object.keys(NOMBRES)) if (params[k]) extras[k] = params[k];
+  const pintarExtras = () => {
+    $('#extras').innerHTML = Object.entries(extras).map(([k, v]) => `<a href="#" data-quitar="${k}">${esc(NOMBRES[k](v))} ✕</a>`).join('');
+    $('#extras').querySelectorAll('[data-quitar]').forEach(a => a.onclick = (e) => { e.preventDefault(); delete extras[a.dataset.quitar]; offset = 0; pintarExtras(); cargar(); });
+  };
+  pintarExtras();
 
   async function cargar() {
-    const qs = new URLSearchParams({ q: $('#q').value, estado: $('#estado').value, plan_id: $('#plan').value, limit: POR_PAGINA, offset });
+    const qs = new URLSearchParams({ q: $('#q').value, estado: $('#estado').value, plan_id: $('#plan').value, limit: POR_PAGINA, offset, ...extras });
     const { items, total } = await api('GET', `/api/clientes?${qs}`);
     $('#filas').innerHTML = items.length ? items.map(c => `
       <tr class="clic" data-id="${c.id}">

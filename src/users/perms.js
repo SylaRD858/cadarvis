@@ -5,6 +5,7 @@ const PERM_GROUPS = {
   'Planes': ['planes.ver', 'planes.editar'],
   'Clientes': ['clientes.ver', 'clientes.editar'],
   'Mapa': ['mapa.ver', 'mapa.editar'],
+  'Averías': ['averias.ver', 'averias.crear', 'averias.gestionar'],
 };
 const ALL_PERMS = Object.values(PERM_GROUPS).flat();
 const SUPERADMIN_ROLE = 'Superadmin';

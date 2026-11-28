@@ -13,6 +13,7 @@ const MODULES = [
   './clients/routes',
   './map/routes',
   './dashboard/routes',
+  './averias/routes',
 ];
 
 function createApp(db, { publicDir = path.join(__dirname, '..', 'public') } = {}) {

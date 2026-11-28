@@ -10,9 +10,9 @@ test('mapa', async (t) => {
   const cajero = await s.login('caja', 'Cajero');
 
   let tipos;
-  await t.test('7 tipos semilla', async () => {
+  await t.test('6 tipos semilla', async () => {
     tipos = (await s.req('GET', '/api/mapa/tipos', undefined, cajero)).data;
-    assert.strictEqual(tipos.length, 7);
+    assert.strictEqual(tipos.length, 6);
   });
   const tid = key => tipos.find(x => x.key === key).id;
 

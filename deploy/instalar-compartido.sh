@@ -71,13 +71,44 @@ sudo -u cadarvis sqlite3 $DB ".backup /var/lib/cadarvis/respaldos/cadarvis-$(dat
 find /var/lib/cadarvis/respaldos -name 'cadarvis-*.db' -mtime +7 -delete
 EOF
 chmod +x /usr/local/bin/cadarvis-actualizar /usr/local/bin/cadarvis-respaldo
-cat > /etc/cron.d/cadarvis <<'EOF'
-*/5 * * * * root /usr/local/bin/cadarvis-actualizar
-7 * * * * root /usr/local/bin/cadarvis-respaldo
+# Temporizadores de systemd (no dependen de que cron este instalado)
+rm -f /etc/cron.d/cadarvis
+cat > /etc/systemd/system/cadarvis-actualizar.service <<'EOF'
+[Unit]
+Description=CADARVIS - actualizar desde GitHub
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/cadarvis-actualizar
+EOF
+cat > /etc/systemd/system/cadarvis-actualizar.timer <<'EOF'
+[Unit]
+Description=CADARVIS - actualizar cada 5 minutos
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+[Install]
+WantedBy=timers.target
+EOF
+cat > /etc/systemd/system/cadarvis-respaldo.service <<'EOF'
+[Unit]
+Description=CADARVIS - respaldo de la base de datos
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/cadarvis-respaldo
+EOF
+cat > /etc/systemd/system/cadarvis-respaldo.timer <<'EOF'
+[Unit]
+Description=CADARVIS - respaldo cada hora
+[Timer]
+OnCalendar=*-*-* *:07:00
+Persistent=true
+[Install]
+WantedBy=timers.target
 EOF
 
 systemctl daemon-reload
 systemctl enable --now cadarvis
+systemctl enable --now cadarvis-actualizar.timer cadarvis-respaldo.timer
 sleep 2
 curl -fsS http://127.0.0.1:$PORT/api/salud
 

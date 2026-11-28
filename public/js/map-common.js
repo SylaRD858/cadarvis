@@ -7,17 +7,26 @@ export async function leafletDisponible() {
 export const AVISO_SIN_LEAFLET = `<div class="aviso">No se pudo cargar el mapa. Revise la conexión a internet
   o ejecute <code>scripts/descargar-vendor.sh</code> en el servidor.</div>`;
 
-// Crea un mapa con capas de calles y satélite. El mosaico ya visto queda en caché del navegador.
+// Zoom máximo del mapa. Más allá de lo que tiene cada proveedor, se amplía la última imagen
+// disponible (maxNativeZoom) en vez de mostrar el cuadro de "sin datos".
+const ZOOM_MAX = 21;
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services';
+
+// Crea un mapa con tres vistas: satélite con nombres de calles (por defecto), satélite solo y calles.
+// El mosaico ya visto queda en caché del navegador.
 export function createMap(el, { center, zoom = 15 } = {}) {
   const L = window.L;
-  const calles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '© OpenStreetMap',
-  });
-  const satelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19, attribution: 'Imágenes © Esri',
-  });
-  const map = L.map(el, { center: [center.lat, center.lng], zoom, layers: [satelite] });
-  L.control.layers({ 'Satélite': satelite, 'Calles': calles }, null, { position: 'bottomleft' }).addTo(map);
+  const opt = (nativo, attribution) => ({ maxZoom: ZOOM_MAX, maxNativeZoom: nativo, attribution });
+  const imagen = () => L.tileLayer(`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`, opt(18, 'Imágenes © Esri, Maxar'));
+  // Calles y nombres encima de la foto satelital (como la vista "Híbrido" de Google)
+  const nombresCalles = L.tileLayer(`${ESRI}/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}`, opt(18, 'Calles © Esri'));
+  const nombresLugares = L.tileLayer(`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`, opt(18, ''));
+  const hibrido = L.layerGroup([imagen(), nombresCalles, nombresLugares]);
+  const satelite = imagen();
+  const calles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', opt(19, '© OpenStreetMap'));
+
+  const map = L.map(el, { center: [center.lat, center.lng], zoom, maxZoom: ZOOM_MAX, layers: [hibrido] });
+  L.control.layers({ 'Satélite con calles': hibrido, 'Satélite': satelite, 'Calles': calles }, null, { position: 'bottomleft' }).addTo(map);
   setTimeout(() => map.invalidateSize(), 50);
   return map;
 }

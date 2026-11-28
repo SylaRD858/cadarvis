@@ -29,6 +29,15 @@ test('http básico', async (t) => {
     assert.deepStrictEqual(r.data, { a: 1 });
   });
 
+  await t.test('archivos de la app se revalidan siempre (no-cache) y responden 304 si no cambiaron', async () => {
+    const r1 = await fetch(s.url + '/js/app.js');
+    assert.strictEqual(r1.headers.get('cache-control'), 'no-cache');
+    const lm = r1.headers.get('last-modified');
+    assert.ok(lm);
+    const r2 = await fetch(s.url + '/js/app.js', { headers: { 'if-modified-since': lm } });
+    assert.strictEqual(r2.status, 304);
+  });
+
   await t.test('path traversal bloqueado', async () => {
     const res = await fetch(s.url + '/%2e%2e/%2e%2e/etc/passwd');
     const txt = await res.text();

@@ -20,10 +20,22 @@ function serveStatic(req, res, rootDir) {
     file = path.join(root, 'index.html'); // SPA
     if (!fs.existsSync(file)) return notFound(res);
   }
-  res.writeHead(200, {
+  // Imágenes y librerías externas se guardan un día; el código de la app se revalida siempre
+  // (responde 304 si no cambió), así cada actualización se ve de inmediato.
+  const larga = /[\\/](vendor|img)[\\/]/.test(file);
+  const mtime = fs.statSync(file).mtime;
+  mtime.setMilliseconds(0);
+  const headers = {
     'content-type': TYPES[path.extname(file)] || 'application/octet-stream',
-    'cache-control': file.endsWith('index.html') || file.endsWith('sw.js') ? 'no-cache' : 'public, max-age=3600',
-  });
+    'cache-control': larga ? 'public, max-age=86400' : 'no-cache',
+    'last-modified': mtime.toUTCString(),
+  };
+  const ims = Date.parse(req.headers['if-modified-since'] || '');
+  if (!Number.isNaN(ims) && ims >= mtime.getTime()) {
+    res.writeHead(304, headers);
+    return res.end();
+  }
+  res.writeHead(200, headers);
   fs.createReadStream(file).pipe(res);
 }
 

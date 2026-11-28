@@ -89,7 +89,7 @@ if ! grep -q "^$DOMINIO" $CF; then
   cp -a $CF $CF.antes-cadarvis
   printf '\n%s {\n  encode gzip\n  reverse_proxy 127.0.0.1:%s\n}\n' "$DOMINIO" "$PORT" >> $CF
   if caddy validate --config $CF --adapter caddyfile; then
-    systemctl reload caddy
+    systemctl reload caddy 2>/dev/null || caddy reload --config $CF --adapter caddyfile
   else
     echo "Configuracion de Caddy invalida, restaurando la anterior"
     cp -a $CF.antes-cadarvis $CF
